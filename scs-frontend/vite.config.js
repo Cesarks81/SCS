@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  base: '/',
+  base: '/scs-frontend/',
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
   plugins: [react(), tailwindcss()],
 })

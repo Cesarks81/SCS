@@ -11,11 +11,10 @@
       "config": { "distDir": "dist" }
     }
   ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "scs-backend/main.py" },
-    { "src": "/docs(.*)", "dest": "scs-backend/main.py" },
-    { "src": "/redoc(.*)", "dest": "scs-backend/main.py" },
-    { "src": "/openapi.json", "dest": "scs-backend/main.py" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "scs-backend/main.py" },
+    { "source": "/docs(.*)", "destination": "scs-backend/main.py" },
+    { "source": "/openapi.json", "destination": "scs-backend/main.py" },
+    { "source": "/(.*)", "destination": "/scs-frontend/index.html" }
   ]
 }

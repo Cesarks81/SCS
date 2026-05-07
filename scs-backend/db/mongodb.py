@@ -1,10 +1,10 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-
 from core.config import settings
 
-client = AsyncIOMotorClient(settings.mongodb_url)
-database = client[settings.db_name]
-
-
 async def get_database() -> AsyncIOMotorDatabase:
-    return database
+    client = AsyncIOMotorClient(
+        settings.mongodb_url,
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=5000,
+    )
+    return client[settings.db_name]

@@ -1,13 +1,12 @@
 from pathlib import Path
 import sys
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(PROJECT_ROOT))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db.mongodb import get_database
-
-PROJECT_ROOT = Path(__file__).resolve().parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
-
 from modules.products.router import router as products_router
 from modules.warehouses.router import router as warehouses_router
 from modules.auth.router import router as auth_router
