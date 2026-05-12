@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createWarehouse } from '../services/api';
 
 const EMOJIS_TECH = ['💻', '🖥️', '📱', '⌨️', '🖱️', '🖨️', '🎧', '📦', '🗄️', '🛠️', '🔌', '🔋'];
 
@@ -7,7 +8,8 @@ export default function AddProductModal({
   onClose,
   onProductoGuardado,
   productoAEditar,
-  warehouses = [],
+  warehouses: warehousesProp = [],
+  onWarehouseCreado,
 }) {
   const initialState = {
     type: 'individual',
@@ -27,6 +29,17 @@ export default function AddProductModal({
   const [formData, setFormData] = useState(initialState);
   const [nuevaCarac, setNuevaCarac] = useState({ clave: '', valor: '' });
   const [mostrarEmojis, setMostrarEmojis] = useState(false);
+  const [warehouses, setWarehouses] = useState(warehousesProp);
+
+  // Panel crear almacén inline
+  const [mostrarCrearAlmacen, setMostrarCrearAlmacen] = useState(false);
+  const [nuevoAlmacen, setNuevoAlmacen] = useState({ name: '', location: '' });
+  const [creandoAlmacen, setCreandoAlmacen] = useState(false);
+  const [errorAlmacen, setErrorAlmacen] = useState('');
+
+  useEffect(() => {
+    setWarehouses(warehousesProp);
+  }, [warehousesProp]);
 
   useEffect(() => {
     if (productoAEditar) {
@@ -35,6 +48,9 @@ export default function AddProductModal({
       setFormData(initialState);
     }
     setMostrarEmojis(false);
+    setMostrarCrearAlmacen(false);
+    setNuevoAlmacen({ name: '', location: '' });
+    setErrorAlmacen('');
   }, [productoAEditar, isOpen]);
 
   if (!isOpen) return null;
@@ -60,10 +76,7 @@ export default function AddProductModal({
     if (!nuevaCarac.clave.trim() || !nuevaCarac.valor.trim()) return;
     setFormData({
       ...formData,
-      attributes: {
-        ...formData.attributes,
-        [nuevaCarac.clave]: nuevaCarac.valor,
-      },
+      attributes: { ...formData.attributes, [nuevaCarac.clave]: nuevaCarac.valor },
     });
     setNuevaCarac({ clave: '', valor: '' });
   };
@@ -72,6 +85,28 @@ export default function AddProductModal({
     const nuevas = { ...formData.attributes };
     delete nuevas[claveAborrar];
     setFormData({ ...formData, attributes: nuevas });
+  };
+
+  const handleCrearAlmacen = async () => {
+    if (!nuevoAlmacen.name.trim() || !nuevoAlmacen.location.trim()) {
+      setErrorAlmacen('Nombre y ubicación son obligatorios.');
+      return;
+    }
+    setCreandoAlmacen(true);
+    setErrorAlmacen('');
+    try {
+      const creado = await createWarehouse(nuevoAlmacen);
+      const nuevosWarehouses = [...warehouses, creado];
+      setWarehouses(nuevosWarehouses);
+      setFormData({ ...formData, warehouse_id: creado.id });
+      setNuevoAlmacen({ name: '', location: '' });
+      setMostrarCrearAlmacen(false);
+      if (onWarehouseCreado) onWarehouseCreado(creado);
+    } catch (e) {
+      setErrorAlmacen(e.message || 'Error al crear el almacén.');
+    } finally {
+      setCreandoAlmacen(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -183,7 +218,6 @@ export default function AddProductModal({
                 {/* Campos principales */}
                 <div className="grid grid-cols-2 gap-4">
 
-                  {/* S/N solo para individual */}
                   {formData.type === 'individual' && (
                     <div className="col-span-2">
                       <label className="block text-sm font-semibold text-slate-700">Número de Serie (S/N)</label>
@@ -199,7 +233,6 @@ export default function AddProductModal({
                     </div>
                   )}
 
-                  {/* Categoría */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700">Categoría</label>
                     <input
@@ -213,7 +246,6 @@ export default function AddProductModal({
                     />
                   </div>
 
-                  {/* Estado */}
                   <div>
                     <label className="block text-sm font-semibold text-slate-700">Estado</label>
                     <select
@@ -229,25 +261,85 @@ export default function AddProductModal({
                     </select>
                   </div>
 
-                  {/* Almacén */}
+                  {/* ── Almacén con botón inline ── */}
                   <div className="col-span-2">
-                    <label className="block text-sm font-semibold text-slate-700">Almacén / Ubicación</label>
-                    <select
-                      name="warehouse_id"
-                      value={formData.warehouse_id}
-                      onChange={handleChange}
-                      required
-                      className="mt-1 w-full rounded-lg border-0 py-2 pl-3 pr-10 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none"
-                    >
-                      <option value="">Seleccionar almacén...</option>
-                      {warehouses.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name} — {w.location}
-                        </option>
-                      ))}
-                    </select>
-                    {warehouses.length === 0 && (
-                      <p className="mt-1 text-xs text-amber-600">No hay almacenes creados todavía.</p>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Almacén / Ubicación</label>
+                    <div className="flex gap-2">
+                      <select
+                        name="warehouse_id"
+                        value={formData.warehouse_id}
+                        onChange={handleChange}
+                        required
+                        className="flex-1 rounded-lg border-0 py-2 pl-3 pr-10 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none"
+                      >
+                        <option value="">Seleccionar almacén...</option>
+                        {warehouses.map((w) => (
+                          <option key={w.id} value={w.id}>
+                            {w.name} — {w.location}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => { setMostrarCrearAlmacen(!mostrarCrearAlmacen); setErrorAlmacen(''); }}
+                        title="Crear nuevo almacén"
+                        className={`shrink-0 flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition-all ${
+                          mostrarCrearAlmacen
+                            ? 'bg-indigo-600 text-white ring-indigo-600 hover:bg-indigo-500'
+                            : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    {warehouses.length === 0 && !mostrarCrearAlmacen && (
+                      <p className="mt-1 text-xs text-amber-600">No hay almacenes. Crea uno con el botón +</p>
+                    )}
+
+                    {/* Panel inline crear almacén */}
+                    {mostrarCrearAlmacen && (
+                      <div className="mt-3 rounded-xl bg-indigo-50 ring-1 ring-indigo-100 p-4 space-y-3">
+                        <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Nuevo almacén</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            placeholder="Nombre (Ej: Almacén A)"
+                            value={nuevoAlmacen.name}
+                            onChange={(e) => setNuevoAlmacen({ ...nuevoAlmacen, name: e.target.value })}
+                            className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-indigo-200 focus:ring-2 focus:ring-indigo-600 outline-none placeholder:text-slate-400"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Ubicación (Ej: Planta 2)"
+                            value={nuevoAlmacen.location}
+                            onChange={(e) => setNuevoAlmacen({ ...nuevoAlmacen, location: e.target.value })}
+                            className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-indigo-200 focus:ring-2 focus:ring-indigo-600 outline-none placeholder:text-slate-400"
+                          />
+                        </div>
+                        {errorAlmacen && (
+                          <p className="text-xs text-red-600">{errorAlmacen}</p>
+                        )}
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => { setMostrarCrearAlmacen(false); setErrorAlmacen(''); }}
+                            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-indigo-100 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCrearAlmacen}
+                            disabled={creandoAlmacen}
+                            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 transition-colors"
+                          >
+                            {creandoAlmacen ? 'Creando...' : 'Crear almacén'}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -256,39 +348,18 @@ export default function AddProductModal({
                     <>
                       <div>
                         <label className="block text-sm font-semibold text-slate-700">Stock mínimo</label>
-                        <input
-                          type="number"
-                          name="stock_min"
-                          min="0"
-                          value={formData.stock_min}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none"
-                        />
+                        <input type="number" name="stock_min" min="0" value={formData.stock_min} onChange={handleChange} required
+                          className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-slate-700">Stock máximo</label>
-                        <input
-                          type="number"
-                          name="stock_max"
-                          min="0"
-                          value={formData.stock_max}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none"
-                        />
+                        <input type="number" name="stock_max" min="0" value={formData.stock_max} onChange={handleChange} required
+                          className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-slate-700">Stock de seguridad</label>
-                        <input
-                          type="number"
-                          name="stock_safety"
-                          min="0"
-                          value={formData.stock_safety}
-                          onChange={handleChange}
-                          required
-                          className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none"
-                        />
+                        <input type="number" name="stock_safety" min="0" value={formData.stock_safety} onChange={handleChange} required
+                          className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none" />
                       </div>
                     </>
                   )}
@@ -315,42 +386,23 @@ export default function AddProductModal({
                   )}
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="Atributo (Ej: Color)"
-                        value={nuevaCarac.clave}
+                      <input type="text" placeholder="Atributo (Ej: Color)" value={nuevaCarac.clave}
                         onChange={(e) => setNuevaCarac({ ...nuevaCarac, clave: e.target.value })}
-                        className="hidden min-[456px]:block w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Clave"
-                        value={nuevaCarac.clave}
+                        className="hidden min-[456px]:block w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all" />
+                      <input type="text" placeholder="Clave" value={nuevaCarac.clave}
                         onChange={(e) => setNuevaCarac({ ...nuevaCarac, clave: e.target.value })}
-                        className="block min-[456px]:hidden w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all"
-                      />
+                        className="block min-[456px]:hidden w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all" />
                     </div>
                     <div className="flex-1">
-                      <input
-                        type="text"
-                        placeholder="Valor (Ej: Negro)"
-                        value={nuevaCarac.valor}
+                      <input type="text" placeholder="Valor (Ej: Negro)" value={nuevaCarac.valor}
                         onChange={(e) => setNuevaCarac({ ...nuevaCarac, valor: e.target.value })}
-                        className="hidden min-[456px]:block w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Valor"
-                        value={nuevaCarac.valor}
+                        className="hidden min-[456px]:block w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all" />
+                      <input type="text" placeholder="Valor" value={nuevaCarac.valor}
                         onChange={(e) => setNuevaCarac({ ...nuevaCarac, valor: e.target.value })}
-                        className="block min-[456px]:hidden w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all"
-                      />
+                        className="block min-[456px]:hidden w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all" />
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleAñadirEspecificacion}
-                      className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-200 transition-colors"
-                    >
+                    <button type="button" onClick={handleAñadirEspecificacion}
+                      className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-200 transition-colors">
                       Añadir
                     </button>
                   </div>
@@ -360,17 +412,12 @@ export default function AddProductModal({
 
               {/* Footer */}
               <div className="shrink-0 bg-slate-50 px-4 py-4 sm:flex sm:flex-row-reverse sm:px-6 border-t border-slate-100">
-                <button
-                  type="submit"
-                  className="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto transition-all"
-                >
+                <button type="submit"
+                  className="inline-flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 sm:ml-3 sm:w-auto transition-all">
                   Guardar Producto
                 </button>
-                <button
-                  onClick={onClose}
-                  type="button"
-                  className="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto transition-all"
-                >
+                <button onClick={onClose} type="button"
+                  className="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto transition-all">
                   Cancelar
                 </button>
               </div>

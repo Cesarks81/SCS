@@ -4,7 +4,7 @@ import { login, register } from '../services/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [modo, setModo] = useState('login'); // 'login' | 'register'
+  const [modo, setModo] = useState('login');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
@@ -33,6 +33,8 @@ export default function LoginPage() {
       navigate('/');
     } catch (err) {
       setError(err.message);
+      // Borrar la contraseña al producirse un error
+      setFormData((prev) => ({ ...prev, password: '' }));
     } finally {
       setCargando(false);
     }
@@ -42,7 +44,6 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
 
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <img
             src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500"
@@ -51,7 +52,6 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* Tarjeta */}
         <div className="bg-white rounded-3xl shadow-2xl p-8">
 
           <h2 className="text-2xl font-black text-slate-900 mb-1">
@@ -100,7 +100,9 @@ export default function LoginPage() {
                 onChange={handleChange}
                 required
                 placeholder="••••••••"
-                className="w-full rounded-xl border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all"
+                className={`w-full rounded-xl border-0 py-2.5 px-3 text-slate-900 shadow-sm ring-1 ring-inset focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none placeholder:text-slate-400 transition-all ${
+                  error ? 'ring-red-300 bg-red-50' : 'ring-slate-300'
+                }`}
               />
             </div>
 
