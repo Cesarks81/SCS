@@ -52,10 +52,21 @@ export default function AddProductModal({
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setFormData({ ...formData, image_url: previewUrl, emoji: '' });
-    }
+    if (!file) return;
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 800;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(objectUrl);
+      const base64 = canvas.toDataURL('image/jpeg', 0.75);
+      setFormData((prev) => ({ ...prev, image_url: base64, emoji: '' }));
+    };
+    img.src = objectUrl;
   };
 
   const handleEmojiSelect = (emojiSeleccionado) => {

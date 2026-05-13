@@ -7,6 +7,7 @@ export default function ImagenSegura({ src, alt, className }) {
 
   const esUrlSegura = (url) => {
     if (!url) return false;
+    if (url.startsWith('data:image/')) return true;
     try {
       const parsed = new URL(url);
       return parsed.protocol === 'http:' || parsed.protocol === 'https:';
