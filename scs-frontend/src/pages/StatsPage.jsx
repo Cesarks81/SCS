@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getProducts, getWarehouses, getMovements } from '../services/api';
+import { getProducts, getWarehouses, getMovements, updateProduct } from '../services/api';
 
 // ── Colores para gráficas ──────────────────────────────────────────────────
 const PALETTE = [
@@ -127,11 +127,24 @@ function GraficaDona({ segmentos, size = 140 }) {
 }
 
 // ── Panel de configuración de niveles de stock ─────────────────────────────
-function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
-  const [config, setConfig] = useState(stockConfig);
+function PanelNivelesStock({ productos, onGuardar }) {
+  const productosCuantificables = productos.filter((p) => p.type === 'countable');
+
+  const configInicial = () =>
+    Object.fromEntries(
+      productosCuantificables.map((p) => [
+        p.id,
+        { stock_min: p.stock_min, stock_max: p.stock_max, stock_safety: p.stock_safety },
+      ])
+    );
+
+  const [config, setConfig] = useState(configInicial);
+  const [guardando, setGuardando] = useState(false);
   const [guardado, setGuardado] = useState(false);
 
-  const productosCuantificables = productos.filter((p) => p.type === 'countable');
+  useEffect(() => {
+    setConfig(configInicial());
+  }, [productos]);
 
   const handleChange = (id, campo, valor) => {
     setConfig((prev) => ({
@@ -141,10 +154,36 @@ function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
     setGuardado(false);
   };
 
-  const handleGuardar = () => {
-    onGuardar(config);
-    setGuardado(true);
-    setTimeout(() => setGuardado(false), 2000);
+  // Validaciones por producto
+  const errores = {};
+  productosCuantificables.forEach((p) => {
+    const cfg = config[p.id] || {};
+    const msgs = [];
+    if (cfg.stock_max < p.current_stock) {
+      msgs.push(`El máximo (${cfg.stock_max}) no puede ser inferior al stock actual (${p.current_stock} uds.)`);
+    }
+    if (cfg.stock_min > cfg.stock_max) {
+      msgs.push('El mínimo no puede superar al máximo.');
+    }
+    if (cfg.stock_safety > cfg.stock_min) {
+      msgs.push('El stock de seguridad no puede superar al mínimo.');
+    }
+    if (msgs.length) errores[p.id] = msgs;
+  });
+  const hayErrores = Object.keys(errores).length > 0;
+
+  const handleGuardar = async () => {
+    if (hayErrores || guardando) return;
+    setGuardando(true);
+    try {
+      await onGuardar(config);
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 2000);
+    } catch (e) {
+      alert(`Error al guardar: ${e.message}`);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   if (productosCuantificables.length === 0) {
@@ -155,15 +194,18 @@ function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
     <div className="space-y-4">
       {productosCuantificables.map((p) => {
         const cfg = config[p.id] || { stock_min: p.stock_min, stock_max: p.stock_max, stock_safety: p.stock_safety };
-        const pct = p.stock_max > 0 ? Math.min(100, (p.current_stock / p.stock_max) * 100) : 0;
-        const nivel = p.current_stock <= (cfg.stock_safety ?? p.stock_safety)
+        const pct = cfg.stock_max > 0 ? Math.min(100, (p.current_stock / cfg.stock_max) * 100) : 0;
+        const sobreMaximo = p.current_stock > cfg.stock_max && cfg.stock_max > 0;
+        const nivel = p.current_stock <= cfg.stock_safety
           ? 'crítico'
-          : p.current_stock <= (cfg.stock_min ?? p.stock_min)
+          : p.current_stock <= cfg.stock_min
           ? 'bajo'
+          : sobreMaximo
+          ? 'exceso'
           : 'ok';
 
         return (
-          <div key={p.id} className="rounded-xl bg-slate-50 ring-1 ring-slate-100 p-4 space-y-3">
+          <div key={p.id} className={`rounded-xl ring-1 p-4 space-y-3 ${errores[p.id] ? 'bg-red-50 ring-red-200' : 'bg-slate-50 ring-slate-100'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {p.emoji && <span className="text-xl">{p.emoji}</span>}
@@ -171,10 +213,14 @@ function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
               </div>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                 nivel === 'crítico' ? 'bg-red-100 text-red-600'
-                : nivel === 'bajo' ? 'bg-amber-100 text-amber-600'
+                : nivel === 'bajo'  ? 'bg-amber-100 text-amber-600'
+                : nivel === 'exceso' ? 'bg-indigo-100 text-indigo-600'
                 : 'bg-green-100 text-green-600'
               }`}>
-                {nivel === 'crítico' ? '⚠ Crítico' : nivel === 'bajo' ? '▼ Bajo' : '✓ OK'} · {p.current_stock} uds.
+                {nivel === 'crítico' ? '⚠ Crítico'
+                 : nivel === 'bajo'  ? '▼ Bajo'
+                 : nivel === 'exceso' ? '▲ Sobre máximo'
+                 : '✓ OK'} · {p.current_stock} uds.
               </span>
             </div>
 
@@ -182,7 +228,10 @@ function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
             <div className="relative h-3 bg-slate-200 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  nivel === 'crítico' ? 'bg-red-400' : nivel === 'bajo' ? 'bg-amber-400' : 'bg-green-400'
+                  nivel === 'crítico' ? 'bg-red-400'
+                  : nivel === 'bajo'  ? 'bg-amber-400'
+                  : nivel === 'exceso' ? 'bg-indigo-400'
+                  : 'bg-green-400'
                 }`}
                 style={{ width: `${pct}%` }}
               />
@@ -192,8 +241,8 @@ function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
             <div className="grid grid-cols-3 gap-2">
               {[
                 { campo: 'stock_safety', label: 'Seguridad', color: 'text-red-500' },
-                { campo: 'stock_min', label: 'Mínimo', color: 'text-amber-500' },
-                { campo: 'stock_max', label: 'Máximo', color: 'text-green-600' },
+                { campo: 'stock_min',    label: 'Mínimo',    color: 'text-amber-500' },
+                { campo: 'stock_max',    label: 'Máximo',    color: 'text-green-600' },
               ].map(({ campo, label, color }) => (
                 <div key={campo}>
                   <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${color}`}>{label}</label>
@@ -202,24 +251,38 @@ function PanelNivelesStock({ productos, stockConfig, onGuardar }) {
                     min="0"
                     value={cfg[campo] ?? 0}
                     onChange={(e) => handleChange(p.id, campo, e.target.value)}
-                    className="w-full rounded-lg border-0 py-1.5 px-2 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 outline-none"
+                    className={`w-full rounded-lg border-0 py-1.5 px-2 text-sm text-slate-900 shadow-sm ring-1 ring-inset outline-none focus:ring-2 focus:ring-indigo-600 ${
+                      errores[p.id] ? 'ring-red-300 bg-white' : 'ring-slate-300'
+                    }`}
                   />
                 </div>
               ))}
             </div>
+
+            {/* Mensajes de error */}
+            {errores[p.id] && (
+              <ul className="space-y-0.5">
+                {errores[p.id].map((msg, i) => (
+                  <li key={i} className="text-xs text-red-600 font-medium flex items-center gap-1">
+                    <span>✕</span> {msg}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         );
       })}
 
       <button
         onClick={handleGuardar}
-        className={`w-full rounded-xl py-2.5 text-sm font-semibold transition-all ${
+        disabled={hayErrores || guardando}
+        className={`w-full rounded-xl py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
           guardado
             ? 'bg-green-500 text-white'
             : 'bg-indigo-600 text-white hover:bg-indigo-500'
         }`}
       >
-        {guardado ? '✓ Configuración guardada' : 'Guardar configuración'}
+        {guardando ? 'Guardando...' : guardado ? '✓ Configuración guardada' : hayErrores ? 'Corrige los errores para guardar' : 'Guardar configuración'}
       </button>
     </div>
   );
@@ -231,10 +294,6 @@ export default function StatsPage() {
   const [warehouses, setWarehouses] = useState([]);
   const [movimientosPorProducto, setMovimientosPorProducto] = useState({});
   const [loading, setLoading] = useState(true);
-  const [stockConfig, setStockConfig] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('scs_stock_config') || '{}'); }
-    catch { return {}; }
-  });
 
   useEffect(() => {
     const cargar = async () => {
@@ -243,7 +302,6 @@ export default function StatsPage() {
         setProductos(prods);
         setWarehouses(whs);
 
-        // Cargar movimientos de cada producto en paralelo
         const movs = {};
         await Promise.all(
           prods.map(async (p) => {
@@ -265,9 +323,18 @@ export default function StatsPage() {
     cargar();
   }, []);
 
-  const guardarStockConfig = (cfg) => {
-    setStockConfig(cfg);
-    localStorage.setItem('scs_stock_config', JSON.stringify(cfg));
+  const guardarStockConfig = async (cfg) => {
+    await Promise.all(
+      Object.entries(cfg).map(([id, valores]) =>
+        updateProduct(id, {
+          stock_min: valores.stock_min,
+          stock_max: valores.stock_max,
+          stock_safety: valores.stock_safety,
+        })
+      )
+    );
+    const prods = await getProducts();
+    setProductos(prods);
   };
 
   // ── Cálculos derivados ─────────────────────────────────────────────────
@@ -282,8 +349,6 @@ export default function StatsPage() {
   const totalEntradas = todosMovimientos.filter((m) => m.type === 'in').length;
   const totalSalidas = todosMovimientos.filter((m) => m.type === 'out').length;
 
-  // Productos por almacén
-  const whMap = Object.fromEntries(warehouses.map((w) => [w.id, w]));
   const productosPorAlmacen = warehouses.map((w, i) => ({
     label: w.name,
     sublabel: w.location,
@@ -292,7 +357,6 @@ export default function StatsPage() {
   }));
   const maxPorAlmacen = Math.max(...productosPorAlmacen.map((x) => x.valor), 1);
 
-  // Productos por categoría (dona)
   const categorias = [...new Set(productos.map((p) => p.category).filter(Boolean))];
   const segmentosCat = categorias.map((cat, i) => ({
     label: cat,
@@ -300,11 +364,9 @@ export default function StatsPage() {
     color: PALETTE[i % PALETTE.length],
   }));
 
-  // Movimientos últimas semanas (agrupados por semana)
   const movimientosOrdenados = [...todosMovimientos].sort(
     (a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0)
   );
-
   const semanas = {};
   movimientosOrdenados.forEach((m) => {
     const fecha = new Date(m.created_at || Date.now());
@@ -317,15 +379,11 @@ export default function StatsPage() {
   });
   const datosMovimientos = Object.values(semanas).slice(-8);
 
-  // Alertas de stock
   const alertas = productos
     .filter((p) => p.type === 'countable')
     .map((p) => {
-      const cfg = stockConfig[p.id] || {};
-      const safety = cfg.stock_safety ?? p.stock_safety ?? 0;
-      const min = cfg.stock_min ?? p.stock_min ?? 0;
-      if (p.current_stock <= safety) return { producto: p, nivel: 'crítico' };
-      if (p.current_stock <= min) return { producto: p, nivel: 'bajo' };
+      if (p.current_stock <= (p.stock_safety ?? 0)) return { producto: p, nivel: 'crítico' };
+      if (p.current_stock <= (p.stock_min ?? 0)) return { producto: p, nivel: 'bajo' };
       return null;
     })
     .filter(Boolean);
@@ -439,10 +497,9 @@ export default function StatsPage() {
         {/* Configuración niveles de stock */}
         <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
           <h3 className="text-sm font-bold text-slate-900 mb-1">Niveles de stock</h3>
-          <p className="text-xs text-slate-400 mb-4">Configura los umbrales de cada lote. Se guardan localmente.</p>
+          <p className="text-xs text-slate-400 mb-4">Configura los umbrales de cada lote. Se guardan en la base de datos.</p>
           <PanelNivelesStock
             productos={productos}
-            stockConfig={stockConfig}
             onGuardar={guardarStockConfig}
           />
         </div>

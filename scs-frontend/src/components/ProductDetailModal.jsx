@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SecureImg from './SecureImg';
 import { createMovement } from '../services/api';
 
@@ -6,6 +6,13 @@ const MOV_INIT = { open: false, type: 'in', quantity: 1, reason: '', loading: fa
 
 export default function ProductDetailModal({ isOpen, producto, onClose, onEdit, onDelete, onMovimiento }) {
   const [movForm, setMovForm] = useState(MOV_INIT);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !producto) return null;
 

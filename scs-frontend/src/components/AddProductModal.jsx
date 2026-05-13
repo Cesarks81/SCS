@@ -344,8 +344,8 @@ export default function AddProductModal({
                     )}
                   </div>
 
-                  {/* Cantidad inicial (solo para countable) */}
-                  {formData.type === 'countable' && (
+                  {/* Cantidad inicial (solo al crear, no al editar) */}
+                  {formData.type === 'countable' && !productoAEditar && (
                     <div className="col-span-2">
                       <label className="block text-sm font-semibold text-slate-700">Cantidad inicial</label>
                       <input
