@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getProducts, getWarehouses, getMovements, updateProduct } from '../services/api';
+import { getProducts, getWarehouses, getMovements, updateProduct, createWarehouse, deleteWarehouse } from '../services/api';
 import { exportToExcel, exportToPDF } from '../utils/exportReport';
 
 // ── Colores para gráficas ──────────────────────────────────────────────────
@@ -464,10 +464,16 @@ function PanelNivelesStock({ productos, onGuardar }) {
 }
 
 // ── Página principal de Estadísticas ──────────────────────────────────────
-export default function StatsPage() {
+export default function StatsPage({ onWarehouseCreado }) {
   const [seccion, setSeccion] = useState('resumen'); // 'resumen' | 'ajustes'
   const [modalStockOpen, setModalStockOpen] = useState(false);
   const [exportando, setExportando] = useState(null); // 'excel' | 'pdf' | null
+
+  // Crear almacén
+  const [nuevoAlmacen, setNuevoAlmacen] = useState({ name: '', location: '' });
+  const [creandoAlmacen, setCreandoAlmacen] = useState(false);
+  const [errorAlmacen, setErrorAlmacen] = useState('');
+  const [mostrarFormAlmacen, setMostrarFormAlmacen] = useState(false);
   const [productos, setProductos] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [movimientosPorProducto, setMovimientosPorProducto] = useState({});
@@ -513,6 +519,41 @@ export default function StatsPage() {
     );
     const prods = await getProducts();
     setProductos(prods);
+  };
+
+  const handleCrearAlmacen = async () => {
+    if (!nuevoAlmacen.name.trim() || !nuevoAlmacen.location.trim()) {
+      setErrorAlmacen('Nombre y ubicación son obligatorios.');
+      return;
+    }
+    setCreandoAlmacen(true);
+    setErrorAlmacen('');
+    try {
+      const creado = await createWarehouse(nuevoAlmacen);
+      setWarehouses((prev) => [...prev, creado]);
+      setNuevoAlmacen({ name: '', location: '' });
+      setMostrarFormAlmacen(false);
+      if (onWarehouseCreado) onWarehouseCreado(creado);
+    } catch (e) {
+      setErrorAlmacen(e.message || 'Error al crear el almacén.');
+    } finally {
+      setCreandoAlmacen(false);
+    }
+  };
+
+  const handleBorrarAlmacen = async (warehouse) => {
+    const usados = productos.filter((p) => p.warehouse_id === warehouse.id).length;
+    if (usados > 0) {
+      alert(`No se puede borrar "${warehouse.name}": tiene ${usados} producto(s) asignado(s).`);
+      return;
+    }
+    if (!window.confirm(`¿Borrar el almacén "${warehouse.name}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      await deleteWarehouse(warehouse.id);
+      setWarehouses((prev) => prev.filter((w) => w.id !== warehouse.id));
+    } catch (e) {
+      alert(e.message || 'Error al borrar el almacén.');
+    }
   };
 
   // ── Cálculos derivados ─────────────────────────────────────────────────
@@ -785,6 +826,103 @@ export default function StatsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
               </svg>
             </button>
+          </div>
+
+          {/* Gestión de almacenes */}
+          <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="size-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                <svg className="size-5 text-violet-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Gestión de almacenes</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Consulta y añade los almacenes o ubicaciones del inventario.</p>
+              </div>
+            </div>
+
+            {/* Lista de almacenes existentes */}
+            {warehouses.length > 0 ? (
+              <div className="space-y-2 mb-4">
+                {warehouses.map((w) => {
+                  const count = productos.filter((p) => p.warehouse_id === w.id).length;
+                  return (
+                    <div key={w.id} className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5 ring-1 ring-slate-100">
+                      <div className="size-2 rounded-full bg-violet-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{w.name}</p>
+                        <p className="text-xs text-slate-400 truncate">{w.location}</p>
+                      </div>
+                      <span className="text-xs font-bold text-slate-400 shrink-0">{count} prod.</span>
+                      <button
+                        onClick={() => handleBorrarAlmacen(w)}
+                        disabled={count > 0}
+                        title={count > 0 ? `${count} producto(s) asignado(s)` : 'Borrar almacén'}
+                        className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400 disabled:hover:bg-transparent"
+                      >
+                        <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400 text-center py-4 mb-4">No hay almacenes registrados.</p>
+            )}
+
+            {/* Formulario nuevo almacén */}
+            {mostrarFormAlmacen ? (
+              <div className="rounded-xl bg-violet-50 ring-1 ring-violet-100 p-4 space-y-3">
+                <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">Nuevo almacén</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Nombre (Ej: Almacén A)"
+                    value={nuevoAlmacen.name}
+                    onChange={(e) => setNuevoAlmacen({ ...nuevoAlmacen, name: e.target.value })}
+                    className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-violet-200 focus:ring-2 focus:ring-violet-600 outline-none placeholder:text-slate-400"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Ubicación (Ej: Planta 2)"
+                    value={nuevoAlmacen.location}
+                    onChange={(e) => setNuevoAlmacen({ ...nuevoAlmacen, location: e.target.value })}
+                    className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-violet-200 focus:ring-2 focus:ring-violet-600 outline-none placeholder:text-slate-400"
+                  />
+                </div>
+                {errorAlmacen && <p className="text-xs text-red-600">{errorAlmacen}</p>}
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setMostrarFormAlmacen(false); setErrorAlmacen(''); setNuevoAlmacen({ name: '', location: '' }); }}
+                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-violet-100 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCrearAlmacen}
+                    disabled={creandoAlmacen}
+                    className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500 disabled:opacity-60 transition-colors"
+                  >
+                    {creandoAlmacen ? 'Creando...' : 'Crear almacén'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setMostrarFormAlmacen(true)}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 text-sm font-semibold text-slate-500 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+              >
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Añadir almacén
+              </button>
+            )}
           </div>
 
         </div>

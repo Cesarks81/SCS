@@ -63,8 +63,11 @@ export const getWarehouses = () => authFetch('/warehouses');
 export const createWarehouse = (data) =>
   authFetch('/warehouses', {
     method: 'POST',
-    body: JSON.stringify(data), // { name, location }
+    body: JSON.stringify(data),
   });
+
+export const deleteWarehouse = (id) =>
+  authFetch(`/warehouses/${id}`, { method: 'DELETE' });
 
 // ─── Products ──────────────────────────────────────────────────────────────
 

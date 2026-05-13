@@ -36,3 +36,14 @@ async def get_warehouse(
         return await service.get_warehouse(warehouse_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Warehouse not found") from exc
+
+
+@router.delete("/{warehouse_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_warehouse(
+    warehouse_id: str,
+    service: WarehouseService = Depends(get_warehouse_service),
+) -> None:
+    try:
+        await service.delete_warehouse(warehouse_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc

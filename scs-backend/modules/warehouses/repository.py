@@ -30,3 +30,12 @@ class WarehouseRepository:
 
         document = await self.collection.find_one({"_id": object_id})
         return self._serialize(document)
+
+    async def delete_by_id(self, warehouse_id: str) -> bool:
+        try:
+            object_id = ObjectId(warehouse_id)
+        except InvalidId:
+            return False
+
+        result = await self.collection.delete_one({"_id": object_id})
+        return result.deleted_count == 1
