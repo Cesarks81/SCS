@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getProducts, getWarehouses, getMovements, updateProduct } from '../services/api';
+import { exportToExcel, exportToPDF } from '../utils/exportReport';
 
 // ── Colores para gráficas ──────────────────────────────────────────────────
 const PALETTE = [
@@ -123,6 +124,180 @@ function GraficaDona({ segmentos, size = 140 }) {
       <text x={cx} y={cy - 6} textAnchor="middle" className="text-xs" fill="#0f172a" fontSize="18" fontWeight="900">{total}</text>
       <text x={cx} y={cy + 12} textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="600">TOTAL</text>
     </svg>
+  );
+}
+
+// ── Modal de niveles de stock ──────────────────────────────────────────────
+function StockLevelModal({ isOpen, productos, onGuardar, onClose }) {
+  const productosCuantificables = productos.filter((p) => p.type === 'countable');
+
+  const configInicial = () =>
+    Object.fromEntries(
+      productosCuantificables.map((p) => [
+        p.id,
+        { stock_min: p.stock_min ?? 0, stock_max: p.stock_max ?? 0, stock_safety: p.stock_safety ?? 0 },
+      ])
+    );
+
+  const [config, setConfig] = useState(configInicial);
+  const [busqueda, setBusqueda] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [guardado, setGuardado] = useState(false);
+
+  useEffect(() => { setConfig(configInicial()); }, [productos]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
+  const handleChange = (id, campo, valor) => {
+    setConfig((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), [campo]: Number(valor) } }));
+    setGuardado(false);
+  };
+
+  const errores = {};
+  productosCuantificables.forEach((p) => {
+    const cfg = config[p.id] || {};
+    const msgs = [];
+    if (cfg.stock_max < p.current_stock)       msgs.push(`Máximo (${cfg.stock_max}) < stock actual (${p.current_stock})`);
+    if (cfg.stock_min > cfg.stock_max)          msgs.push('Mínimo no puede superar al máximo.');
+    if (cfg.stock_safety > cfg.stock_min)       msgs.push('Seguridad no puede superar al mínimo.');
+    if (msgs.length) errores[p.id] = msgs;
+  });
+  const hayErrores = Object.keys(errores).length > 0;
+
+  const handleGuardar = async () => {
+    if (hayErrores || guardando) return;
+    setGuardando(true);
+    try {
+      await onGuardar(config);
+      setGuardado(true);
+      setTimeout(() => setGuardado(false), 2000);
+    } catch (e) {
+      alert(`Error al guardar: ${e.message}`);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const filtrados = productosCuantificables.filter((p) =>
+    p.model.toLowerCase().includes(busqueda.toLowerCase())
+  );
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="relative z-50" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 bg-gray-900/70 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-10 overflow-y-auto flex items-center justify-center p-4">
+        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
+          {/* Cabecera */}
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 shrink-0">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Niveles de stock</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Seguridad · Mínimo · Máximo por producto</p>
+            </div>
+            <button onClick={onClose} className="rounded-full p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors">
+              <svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Buscador */}
+          <div className="px-6 py-3 border-b border-slate-100 shrink-0">
+            <div className="relative">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+              </div>
+              <input
+                type="search"
+                placeholder="Buscar producto..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full rounded-xl border-0 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-900 ring-1 ring-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          {/* Lista de productos */}
+          <div className="overflow-y-auto flex-1 px-6 py-4 space-y-3">
+            {filtrados.length === 0 && (
+              <p className="text-sm text-slate-400 text-center py-8">
+                {productosCuantificables.length === 0
+                  ? 'No hay productos de tipo lote/grupo.'
+                  : 'Sin resultados para esa búsqueda.'}
+              </p>
+            )}
+            {filtrados.map((p) => {
+              const cfg = config[p.id] || { stock_min: 0, stock_max: 0, stock_safety: 0 };
+              return (
+                <div key={p.id} className={`rounded-xl ring-1 p-4 space-y-3 ${errores[p.id] ? 'bg-red-50 ring-red-200' : 'bg-slate-50 ring-slate-100'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      {p.emoji && <span className="text-xl">{p.emoji}</span>}
+                      <div>
+                        <p className="font-semibold text-slate-800 text-sm leading-tight">{p.model}</p>
+                        <p className="text-xs text-slate-400">Stock actual: <span className="font-bold text-slate-600">{p.current_stock}</span></p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { campo: 'stock_safety', label: 'Seguridad', color: 'text-red-500' },
+                      { campo: 'stock_min',    label: 'Mínimo',    color: 'text-amber-500' },
+                      { campo: 'stock_max',    label: 'Máximo',    color: 'text-green-600' },
+                    ].map(({ campo, label, color }) => (
+                      <div key={campo}>
+                        <label className={`block text-[10px] font-bold uppercase tracking-wider mb-1 ${color}`}>{label}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={cfg[campo] ?? 0}
+                          onChange={(e) => handleChange(p.id, campo, e.target.value)}
+                          className={`w-full rounded-lg border-0 py-1.5 px-2 text-sm text-slate-900 shadow-sm ring-1 ring-inset outline-none focus:ring-2 focus:ring-indigo-600 ${
+                            errores[p.id] ? 'ring-red-300 bg-white' : 'ring-slate-300'
+                          }`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  {errores[p.id] && (
+                    <ul className="space-y-0.5">
+                      {errores[p.id].map((msg, i) => (
+                        <li key={i} className="text-xs text-red-600 font-medium flex items-center gap-1">
+                          <span>✕</span> {msg}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-slate-100 shrink-0">
+            <button
+              onClick={handleGuardar}
+              disabled={hayErrores || guardando}
+              className={`w-full rounded-xl py-2.5 text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                guardado ? 'bg-green-500 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-500'
+              }`}
+            >
+              {guardando ? 'Guardando...' : guardado ? '✓ Guardado' : hayErrores ? 'Corrige los errores para guardar' : 'Guardar cambios'}
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -291,6 +466,8 @@ function PanelNivelesStock({ productos, onGuardar }) {
 // ── Página principal de Estadísticas ──────────────────────────────────────
 export default function StatsPage() {
   const [seccion, setSeccion] = useState('resumen'); // 'resumen' | 'ajustes'
+  const [modalStockOpen, setModalStockOpen] = useState(false);
+  const [exportando, setExportando] = useState(null); // 'excel' | 'pdf' | null
   const [productos, setProductos] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [movimientosPorProducto, setMovimientosPorProducto] = useState({});
@@ -523,28 +700,103 @@ export default function StatsPage() {
 
       {/* ── Sección Ajustes ───────────────────────────────────────────────── */}
       {seccion === 'ajustes' && (
-        <div className="space-y-6">
+        <div className="space-y-4 max-w-2xl">
 
-          {/* Niveles de stock */}
-          <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm max-w-2xl">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="size-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
-                <svg className="size-4 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+          {/* Exportar datos */}
+          <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                <svg className="size-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Exportar informe</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Descarga el inventario completo para el responsable de almacén o el departamento de compras.</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={async () => {
+                  setExportando('excel');
+                  try { exportToExcel(productos, warehouses); }
+                  finally { setExportando(null); }
+                }}
+                disabled={exportando !== null}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
+              >
+                {exportando === 'excel' ? (
+                  <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                ) : (
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m.75 12l3 3m0 0l3-3m-3 3v-6m-1.5-9H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                )}
+                Exportar Excel
+              </button>
+              <button
+                onClick={async () => {
+                  setExportando('pdf');
+                  try { exportToPDF(productos, warehouses); }
+                  finally { setExportando(null); }
+                }}
+                disabled={exportando !== null}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition-colors disabled:opacity-60"
+              >
+                {exportando === 'pdf' ? (
+                  <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                ) : (
+                  <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                )}
+                Exportar PDF
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-3 text-center">
+              El archivo se descargará con la fecha de hoy como nombre.
+            </p>
+          </div>
+
+          {/* Ajustes de nivel de stock */}
+          <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="size-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                <svg className="size-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-bold text-slate-900">Niveles de stock</h3>
-                <p className="text-xs text-slate-400">Umbrales de seguridad, mínimo y máximo para cada lote.</p>
+                <h3 className="text-sm font-bold text-slate-900">Ajustes de nivel de stock</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Configura los umbrales de seguridad, mínimo y máximo para cada lote o grupo.</p>
               </div>
             </div>
-            <div className="mt-5">
-              <PanelNivelesStock productos={productos} onGuardar={guardarStockConfig} />
-            </div>
+            <button
+              onClick={() => setModalStockOpen(true)}
+              className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
+                </svg>
+                Abrir configuración
+              </span>
+              <svg className="size-4 text-slate-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+              </svg>
+            </button>
           </div>
 
         </div>
       )}
+
+      {/* Modal niveles de stock */}
+      <StockLevelModal
+        isOpen={modalStockOpen}
+        productos={productos}
+        onGuardar={guardarStockConfig}
+        onClose={() => setModalStockOpen(false)}
+      />
 
     </main>
   );

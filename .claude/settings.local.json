@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('xlsx'\\); require\\('jspdf'\\); console.log\\('OK'\\)\")",
+      "Bash(npm run *)"
+    ]
+  }
+}
