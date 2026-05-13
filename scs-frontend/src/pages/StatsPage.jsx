@@ -63,7 +63,7 @@ function GraficaMovimientos({ datos }) {
               />
               <div
                 title={`Salidas: ${d.salidas}`}
-                className="w-4 rounded-t-md bg-rose-400 transition-all duration-700"
+                className="w-4 rounded-t-md bg-red-400 transition-all duration-700"
                 style={{ height: `${(d.salidas / maxVal) * 120}px` }}
               />
             </div>
@@ -77,7 +77,7 @@ function GraficaMovimientos({ datos }) {
           <span className="text-xs text-slate-500">Entradas</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="size-2.5 rounded-sm bg-rose-400" />
+          <div className="size-2.5 rounded-sm bg-red-400" />
           <span className="text-xs text-slate-500">Salidas</span>
         </div>
       </div>
@@ -746,8 +746,8 @@ export default function StatsPage({ onWarehouseCreado }) {
           {/* Exportar datos */}
           <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
             <div className="flex items-start gap-4 mb-5">
-              <div className="size-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                <svg className="size-5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <div className="size-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                <svg className="size-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
               </div>
@@ -764,7 +764,7 @@ export default function StatsPage({ onWarehouseCreado }) {
                   finally { setExportando(null); }
                 }}
                 disabled={exportando !== null}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-60"
               >
                 {exportando === 'excel' ? (
                   <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
@@ -782,7 +782,7 @@ export default function StatsPage({ onWarehouseCreado }) {
                   finally { setExportando(null); }
                 }}
                 disabled={exportando !== null}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 py-3 text-sm font-semibold text-rose-700 hover:bg-rose-100 transition-colors disabled:opacity-60"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors disabled:opacity-60"
               >
                 {exportando === 'pdf' ? (
                   <svg className="size-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
@@ -831,8 +831,8 @@ export default function StatsPage({ onWarehouseCreado }) {
           {/* Gestión de almacenes */}
           <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
             <div className="flex items-start gap-4 mb-5">
-              <div className="size-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
-                <svg className="size-5 text-violet-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <div className="size-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+                <svg className="size-5 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
                 </svg>
               </div>
@@ -849,7 +849,7 @@ export default function StatsPage({ onWarehouseCreado }) {
                   const count = productos.filter((p) => p.warehouse_id === w.id).length;
                   return (
                     <div key={w.id} className="flex items-center gap-3 rounded-xl bg-slate-50 px-4 py-2.5 ring-1 ring-slate-100">
-                      <div className="size-2 rounded-full bg-violet-400 shrink-0" />
+                      <div className="size-2 rounded-full bg-indigo-400 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-800 truncate">{w.name}</p>
                         <p className="text-xs text-slate-400 truncate">{w.location}</p>
@@ -875,22 +875,22 @@ export default function StatsPage({ onWarehouseCreado }) {
 
             {/* Formulario nuevo almacén */}
             {mostrarFormAlmacen ? (
-              <div className="rounded-xl bg-violet-50 ring-1 ring-violet-100 p-4 space-y-3">
-                <p className="text-xs font-bold text-violet-700 uppercase tracking-wider">Nuevo almacén</p>
+              <div className="rounded-xl bg-indigo-50 ring-1 ring-indigo-100 p-4 space-y-3">
+                <p className="text-xs font-bold text-indigo-700 uppercase tracking-wider">Nuevo almacén</p>
                 <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     placeholder="Nombre (Ej: Almacén A)"
                     value={nuevoAlmacen.name}
                     onChange={(e) => setNuevoAlmacen({ ...nuevoAlmacen, name: e.target.value })}
-                    className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-violet-200 focus:ring-2 focus:ring-violet-600 outline-none placeholder:text-slate-400"
+                    className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-indigo-200 focus:ring-2 focus:ring-indigo-600 outline-none placeholder:text-slate-400"
                   />
                   <input
                     type="text"
                     placeholder="Ubicación (Ej: Planta 2)"
                     value={nuevoAlmacen.location}
                     onChange={(e) => setNuevoAlmacen({ ...nuevoAlmacen, location: e.target.value })}
-                    className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-violet-200 focus:ring-2 focus:ring-violet-600 outline-none placeholder:text-slate-400"
+                    className="rounded-lg border-0 py-2 px-3 text-sm text-slate-900 shadow-sm ring-1 ring-inset ring-indigo-200 focus:ring-2 focus:ring-indigo-600 outline-none placeholder:text-slate-400"
                   />
                 </div>
                 {errorAlmacen && <p className="text-xs text-red-600">{errorAlmacen}</p>}
@@ -898,7 +898,7 @@ export default function StatsPage({ onWarehouseCreado }) {
                   <button
                     type="button"
                     onClick={() => { setMostrarFormAlmacen(false); setErrorAlmacen(''); setNuevoAlmacen({ name: '', location: '' }); }}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-violet-100 transition-colors"
+                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-indigo-50 transition-colors"
                   >
                     Cancelar
                   </button>
@@ -906,7 +906,7 @@ export default function StatsPage({ onWarehouseCreado }) {
                     type="button"
                     onClick={handleCrearAlmacen}
                     disabled={creandoAlmacen}
-                    className="rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500 disabled:opacity-60 transition-colors"
+                    className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 disabled:opacity-60 transition-colors"
                   >
                     {creandoAlmacen ? 'Creando...' : 'Crear almacén'}
                   </button>
@@ -915,7 +915,7 @@ export default function StatsPage({ onWarehouseCreado }) {
             ) : (
               <button
                 onClick={() => setMostrarFormAlmacen(true)}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 text-sm font-semibold text-slate-500 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 text-sm font-semibold text-slate-500 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
               >
                 <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

@@ -286,7 +286,7 @@ function App() {
               <div
                 key={producto.id}
                 onClick={() => setProductoSeleccionado(producto)}
-                className="group relative flex flex-col bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-4 shadow-sm ring-1 ring-slate-200/60 hover:shadow-xl hover:ring-slate-300 transition-all duration-300 cursor-pointer overflow-hidden"
+                className="group relative flex flex-col bg-white rounded-2xl p-2 sm:p-4 shadow-sm ring-1 ring-slate-200/60 hover:shadow-xl hover:ring-slate-300 transition-all duration-300 cursor-pointer overflow-hidden"
               >
                 <div className="relative aspect-square sm:aspect-[4/3] w-full bg-slate-50 rounded-xl sm:rounded-2xl overflow-hidden mb-2 sm:mb-4 p-2 sm:p-4">
                   <div className={`absolute top-1.5 left-1.5 sm:top-3 sm:left-3 flex items-center gap-1 bg-white/80 backdrop-blur-sm border text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-sm z-10 ${
