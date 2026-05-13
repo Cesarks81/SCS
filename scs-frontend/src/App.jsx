@@ -5,6 +5,7 @@ import SecureImg from './components/SecureImg';
 import StatsPage from './pages/StatsPage';
 import {
   getProducts,
+  getProduct,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -97,6 +98,18 @@ function App() {
       setProductoSeleccionado(null);
     } catch (e) {
       alert(`Error al borrar: ${e.message}`);
+    }
+  };
+
+  const handleMovimiento = async (productoId) => {
+    try {
+      const actualizado = await getProduct(productoId);
+      const wh = warehouses.find((w) => w.id === actualizado.warehouse_id);
+      const hydratado = { ...actualizado, warehouse_name: wh ? `${wh.name} — ${wh.location}` : actualizado.warehouse_id };
+      setProductos((prev) => prev.map((p) => (p.id === hydratado.id ? hydratado : p)));
+      setProductoSeleccionado(hydratado);
+    } catch (e) {
+      alert(`Error al actualizar stock: ${e.message}`);
     }
   };
 
@@ -263,35 +276,36 @@ function App() {
         <StatsPage />
       ) : (
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
 
             {productosFiltrados.map((producto) => (
               <div
                 key={producto.id}
                 onClick={() => setProductoSeleccionado(producto)}
-                className="group relative flex flex-col bg-white rounded-3xl p-3 sm:p-4 shadow-sm ring-1 ring-slate-200/60 hover:shadow-xl hover:ring-slate-300 transition-all duration-300 cursor-pointer overflow-hidden"
+                className="group relative flex flex-col bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-4 shadow-sm ring-1 ring-slate-200/60 hover:shadow-xl hover:ring-slate-300 transition-all duration-300 cursor-pointer overflow-hidden"
               >
-                <div className="relative aspect-[4/3] w-full bg-slate-50 rounded-2xl overflow-hidden mb-4 p-4">
-                  <div className={`absolute top-3 left-3 flex items-center gap-1.5 bg-white/80 backdrop-blur-sm border text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm z-10 ${
+                <div className="relative aspect-square sm:aspect-[4/3] w-full bg-slate-50 rounded-xl sm:rounded-2xl overflow-hidden mb-2 sm:mb-4 p-2 sm:p-4">
+                  <div className={`absolute top-1.5 left-1.5 sm:top-3 sm:left-3 flex items-center gap-1 bg-white/80 backdrop-blur-sm border text-[8px] sm:text-[10px] font-bold px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full uppercase tracking-wider shadow-sm z-10 ${
                     producto.status === 'Óptimo' ? 'border-green-200 text-green-700' : 'border-amber-200 text-amber-700'
                   }`}>
-                    {producto.status}
+                    <span className="hidden sm:inline">{producto.status}</span>
+                    <span className="sm:hidden">{producto.status === 'Óptimo' ? '✓' : '!'}</span>
                   </div>
 
                   {producto.emoji ? (
-                    <div className="w-full h-full flex items-center justify-center text-6xl select-none">{producto.emoji}</div>
+                    <div className="w-full h-full flex items-center justify-center text-3xl sm:text-6xl select-none">{producto.emoji}</div>
                   ) : (
                     <SecureImg src={producto.image_url} alt={producto.model} className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110" />
                   )}
                 </div>
 
-                <div className="flex flex-col flex-1 px-2 pb-1">
-                  <h3 className="text-lg font-bold text-slate-900 mb-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                <div className="flex flex-col flex-1 px-0.5 sm:px-2 pb-1">
+                  <h3 className="text-xs sm:text-lg font-bold text-slate-900 mb-1 sm:mb-2 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2">
                     {producto.model}
                   </h3>
 
                   {producto.attributes && Object.keys(producto.attributes).length > 0 && (
-                    <div className="mb-4 space-y-1.5">
+                    <div className="hidden sm:block mb-4 space-y-1.5">
                       {Object.entries(producto.attributes).map(([clave, valor]) => (
                         <div key={clave} className="flex justify-between items-center text-xs">
                           <span className="text-slate-500 font-medium">{clave}</span>
@@ -301,21 +315,21 @@ function App() {
                     </div>
                   )}
 
-                  <div className="mt-auto flex items-center justify-between pt-2 border-t border-slate-100">
-                    <div className="flex items-center gap-1.5 rounded-md">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  <div className="mt-auto flex items-center justify-between pt-1.5 sm:pt-2 border-t border-slate-100">
+                    <div className="flex items-center gap-1 rounded-md">
+                      <span className="hidden sm:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                         {producto.type === 'countable' ? 'LOTE:' : 'S/N:'}
                       </span>
-                      <code className="text-xs font-bold text-slate-700">
+                      <code className="text-[10px] sm:text-xs font-bold text-slate-700 truncate max-w-[50px] sm:max-w-none">
                         {producto.type === 'countable' ? producto.current_stock : (producto.serial_number || '-')}
                       </code>
                     </div>
-                    <div className="flex gap-3 items-center">
+                    <div className="flex gap-1.5 sm:gap-3 items-center">
                       {producto.type === 'countable' && (
-                        <span className="text-xs font-bold bg-indigo-50 text-indigo-700 px-2 rounded">x{producto.current_stock}</span>
+                        <span className="text-[10px] sm:text-xs font-bold bg-indigo-50 text-indigo-700 px-1.5 sm:px-2 rounded">x{producto.current_stock}</span>
                       )}
-                      {producto.category && <span className="text-xs font-bold text-slate-400">{producto.category}</span>}
-                      {producto.warehouse_name && <span className="text-xs font-bold text-red-500 truncate max-w-[80px]">{producto.warehouse_name}</span>}
+                      {producto.category && <span className="hidden sm:inline text-xs font-bold text-slate-400">{producto.category}</span>}
+                      {producto.warehouse_name && <span className="hidden sm:inline text-xs font-bold text-red-500 truncate max-w-[80px]">{producto.warehouse_name}</span>}
                     </div>
                   </div>
                 </div>
@@ -363,6 +377,7 @@ function App() {
         onClose={() => setProductoSeleccionado(null)}
         onEdit={abrirEdicion}
         onDelete={borrarProducto}
+        onMovimiento={handleMovimiento}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from db.mongodb import get_database
@@ -18,7 +18,10 @@ async def create_movement(
     user_id: str = "system",
     service: MovementService = Depends(get_movement_service),
 ) -> MovementResponse:
-    return await service.create_movement(data, user_id)
+    try:
+        return await service.create_movement(data, user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
 @router.get("/{product_id}", response_model=list[MovementResponse])

@@ -32,7 +32,7 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    current_stock: int = 0
 
 
 class ProductUpdate(BaseModel):

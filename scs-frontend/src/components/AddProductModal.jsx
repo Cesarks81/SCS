@@ -18,6 +18,7 @@ export default function AddProductModal({
     category: '',
     warehouse_id: '',
     status: 'Óptimo',
+    current_stock: 0,
     stock_min: 0,
     stock_max: 0,
     stock_safety: 0,
@@ -342,6 +343,24 @@ export default function AddProductModal({
                       </div>
                     )}
                   </div>
+
+                  {/* Cantidad inicial (solo para countable) */}
+                  {formData.type === 'countable' && (
+                    <div className="col-span-2">
+                      <label className="block text-sm font-semibold text-slate-700">Cantidad inicial</label>
+                      <input
+                        type="number"
+                        name="current_stock"
+                        min="0"
+                        value={formData.current_stock}
+                        onChange={handleChange}
+                        required
+                        className="mt-1 w-full rounded-lg border-0 py-2 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-indigo-600 sm:text-sm outline-none"
+                        placeholder="Ej: 34"
+                      />
+                      <p className="mt-1 text-xs text-slate-400">Número de unidades disponibles al registrar el lote</p>
+                    </div>
+                  )}
 
                   {/* Stock (solo para countable) */}
                   {formData.type === 'countable' && (
