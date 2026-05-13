@@ -192,7 +192,11 @@ function App() {
                 Estadísticas
               </button>
               <button
-                onClick={() => { logout(); window.location.href = '/login'; }}
+                onClick={() => {
+                  if (!window.confirm('¿Seguro que quieres cerrar sesión?')) return;
+                  logout();
+                  window.location.href = '/login';
+                }}
                 className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white"
               >
                 Cerrar sesión
@@ -306,12 +310,15 @@ function App() {
 
                   {producto.attributes && Object.keys(producto.attributes).length > 0 && (
                     <div className="hidden sm:block mb-4 space-y-1.5">
-                      {Object.entries(producto.attributes).map(([clave, valor]) => (
+                      {Object.entries(producto.attributes).slice(0, 4).map(([clave, valor]) => (
                         <div key={clave} className="flex justify-between items-center text-xs">
-                          <span className="text-slate-500 font-medium">{clave}</span>
-                          <span className="text-slate-700 font-semibold truncate ml-2 bg-slate-100 px-2 py-0.5 rounded-md">{valor}</span>
+                          <span className="text-slate-500 font-medium truncate mr-2">{clave}</span>
+                          <span className="text-slate-700 font-semibold truncate ml-2 bg-slate-100 px-2 py-0.5 rounded-md max-w-[120px]">{valor}</span>
                         </div>
                       ))}
+                      {Object.keys(producto.attributes).length > 4 && (
+                        <p className="text-[10px] text-slate-400 text-right">+{Object.keys(producto.attributes).length - 4} más</p>
+                      )}
                     </div>
                   )}
 
@@ -320,7 +327,7 @@ function App() {
                       <span className="hidden sm:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                         {producto.type === 'countable' ? 'LOTE:' : 'S/N:'}
                       </span>
-                      <code className="text-[10px] sm:text-xs font-bold text-slate-700 truncate max-w-[50px] sm:max-w-none">
+                      <code className="text-[10px] sm:text-xs font-bold text-slate-700 truncate max-w-[50px] sm:max-w-[100px]">
                         {producto.type === 'countable' ? producto.current_stock : (producto.serial_number || '-')}
                       </code>
                     </div>

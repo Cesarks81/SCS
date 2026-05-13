@@ -290,6 +290,7 @@ function PanelNivelesStock({ productos, onGuardar }) {
 
 // ── Página principal de Estadísticas ──────────────────────────────────────
 export default function StatsPage() {
+  const [seccion, setSeccion] = useState('resumen'); // 'resumen' | 'ajustes'
   const [productos, setProductos] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
   const [movimientosPorProducto, setMovimientosPorProducto] = useState({});
@@ -402,109 +403,149 @@ export default function StatsPage() {
     );
   }
 
+  const tabClass = (tab) =>
+    `px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
+      seccion === tab
+        ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/60'
+        : 'text-slate-500 hover:text-slate-700'
+    }`;
+
   return (
-    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-8">
+    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
 
-      {/* KPIs */}
-      <section>
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Resumen general</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard titulo="Productos" valor={totalProductos} subtitulo={`${totalIndividuales} individuales · ${totalLotes} lotes`} color="#6366f1"
-            icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>}
-          />
-          <KpiCard titulo="Unidades en stock" valor={totalUnidades} subtitulo="Solo lotes/grupos" color="#10b981"
-            icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>}
-          />
-          <KpiCard titulo="Entradas" valor={totalEntradas} subtitulo="Movimientos de entrada" color="#6366f1"
-            icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>}
-          />
-          <KpiCard titulo="Salidas" valor={totalSalidas} subtitulo="Movimientos de salida" color="#f59e0b"
-            icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
-          />
-        </div>
-      </section>
-
-      {/* Alertas */}
-      {alertas.length > 0 && (
-        <section className="rounded-2xl bg-amber-50 ring-1 ring-amber-100 p-5">
-          <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+      {/* Tabs */}
+      <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-fit">
+        <button className={tabClass('resumen')} onClick={() => setSeccion('resumen')}>Resumen</button>
+        <button className={tabClass('ajustes')} onClick={() => setSeccion('ajustes')}>
+          <span className="flex items-center gap-1.5">
+            <svg className="size-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
             </svg>
-            Alertas de stock ({alertas.length})
-          </h2>
-          <div className="space-y-2">
-            {alertas.map(({ producto, nivel }) => (
-              <div key={producto.id} className="flex items-center justify-between bg-white rounded-xl px-4 py-2.5 ring-1 ring-amber-100">
-                <div className="flex items-center gap-2">
-                  {producto.emoji && <span>{producto.emoji}</span>}
-                  <span className="text-sm font-semibold text-slate-800">{producto.model}</span>
-                </div>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                  nivel === 'crítico' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                }`}>
-                  {nivel === 'crítico' ? '⚠ Crítico' : '▼ Bajo'} · {producto.current_stock} uds.
-                </span>
+            Ajustes
+          </span>
+        </button>
+      </div>
+
+      {/* ── Sección Resumen ───────────────────────────────────────────────── */}
+      {seccion === 'resumen' && (
+        <div className="space-y-8">
+
+          {/* KPIs */}
+          <section>
+            <h2 className="text-lg font-bold text-slate-900 mb-4">Resumen general</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <KpiCard titulo="Productos" valor={totalProductos} subtitulo={`${totalIndividuales} individuales · ${totalLotes} lotes`} color="#6366f1"
+                icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>}
+              />
+              <KpiCard titulo="Unidades en stock" valor={totalUnidades} subtitulo="Solo lotes/grupos" color="#10b981"
+                icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>}
+              />
+              <KpiCard titulo="Entradas" valor={totalEntradas} subtitulo="Movimientos de entrada" color="#6366f1"
+                icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>}
+              />
+              <KpiCard titulo="Salidas" valor={totalSalidas} subtitulo="Movimientos de salida" color="#f59e0b"
+                icon={<svg className="size-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
+              />
+            </div>
+          </section>
+
+          {/* Alertas */}
+          {alertas.length > 0 && (
+            <section className="rounded-2xl bg-amber-50 ring-1 ring-amber-100 p-5">
+              <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <svg className="size-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                Alertas de stock ({alertas.length})
+              </h2>
+              <div className="space-y-2">
+                {alertas.map(({ producto, nivel }) => (
+                  <div key={producto.id} className="flex items-center justify-between bg-white rounded-xl px-4 py-2.5 ring-1 ring-amber-100">
+                    <div className="flex items-center gap-2">
+                      {producto.emoji && <span>{producto.emoji}</span>}
+                      <span className="text-sm font-semibold text-slate-800">{producto.model}</span>
+                    </div>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      nivel === 'crítico' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                    }`}>
+                      {nivel === 'crítico' ? '⚠ Crítico' : '▼ Bajo'} · {producto.current_stock} uds.
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </section>
+          )}
+
+          {/* Gráficas */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-4">Movimientos por semana</h3>
+              <GraficaMovimientos datos={datosMovimientos} />
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-4">Productos por almacén</h3>
+              {productosPorAlmacen.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-8">No hay almacenes.</p>
+              ) : (
+                <div className="space-y-4">
+                  {productosPorAlmacen.map((item, i) => (
+                    <BarraHorizontal key={i} label={item.label} sublabel={item.sublabel} value={item.valor} max={maxPorAlmacen} color={item.color} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm lg:col-span-2">
+              <h3 className="text-sm font-bold text-slate-900 mb-4">Distribución por categoría</h3>
+              <div className="flex items-center gap-6">
+                <GraficaDona segmentos={segmentosCat} />
+                <div className="flex-1 space-y-2">
+                  {segmentosCat.map((s, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                        <span className="text-slate-600 truncate">{s.label}</span>
+                      </div>
+                      <span className="font-bold text-slate-900 tabular-nums">{s.valor}</span>
+                    </div>
+                  ))}
+                  {segmentosCat.length === 0 && <p className="text-sm text-slate-400">Sin categorías.</p>}
+                </div>
+              </div>
+            </div>
+
           </div>
-        </section>
+        </div>
       )}
 
-      {/* Gráficas principales */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ── Sección Ajustes ───────────────────────────────────────────────── */}
+      {seccion === 'ajustes' && (
+        <div className="space-y-6">
 
-        {/* Movimientos por semana */}
-        <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Movimientos por semana</h3>
-          <GraficaMovimientos datos={datosMovimientos} />
-        </div>
-
-        {/* Productos por almacén */}
-        <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Productos por almacén</h3>
-          {productosPorAlmacen.length === 0 ? (
-            <p className="text-sm text-slate-400 text-center py-8">No hay almacenes.</p>
-          ) : (
-            <div className="space-y-4">
-              {productosPorAlmacen.map((item, i) => (
-                <BarraHorizontal key={i} label={item.label} sublabel={item.sublabel} value={item.valor} max={maxPorAlmacen} color={item.color} />
-              ))}
+          {/* Niveles de stock */}
+          <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm max-w-2xl">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="size-8 rounded-lg bg-indigo-50 flex items-center justify-center shrink-0">
+                <svg className="size-4 text-indigo-600" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Niveles de stock</h3>
+                <p className="text-xs text-slate-400">Umbrales de seguridad, mínimo y máximo para cada lote.</p>
+              </div>
             </div>
-          )}
-        </div>
-
-        {/* Distribución por categoría */}
-        <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-4">Distribución por categoría</h3>
-          <div className="flex items-center gap-6">
-            <GraficaDona segmentos={segmentosCat} />
-            <div className="flex-1 space-y-2">
-              {segmentosCat.map((s, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="size-2.5 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
-                    <span className="text-slate-600 truncate">{s.label}</span>
-                  </div>
-                  <span className="font-bold text-slate-900 tabular-nums">{s.valor}</span>
-                </div>
-              ))}
-              {segmentosCat.length === 0 && <p className="text-sm text-slate-400">Sin categorías.</p>}
+            <div className="mt-5">
+              <PanelNivelesStock productos={productos} onGuardar={guardarStockConfig} />
             </div>
           </div>
-        </div>
 
-        {/* Configuración niveles de stock */}
-        <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200/60 shadow-sm">
-          <h3 className="text-sm font-bold text-slate-900 mb-1">Niveles de stock</h3>
-          <p className="text-xs text-slate-400 mb-4">Configura los umbrales de cada lote. Se guardan en la base de datos.</p>
-          <PanelNivelesStock
-            productos={productos}
-            onGuardar={guardarStockConfig}
-          />
         </div>
+      )}
 
-      </div>
     </main>
   );
 }
