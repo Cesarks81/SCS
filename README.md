@@ -11,7 +11,7 @@
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat&logo=vercel&logoColor=white)](https://vercel.com/)
 
-[Live Demo](https://scs-foafjil5r-cesarks81-4647s-projects.vercel.app) · [Report a Bug](https://github.com/Cesarks81/SCS/issues) · [Request a Feature](https://github.com/Cesarks81/SCS/issues)
+[Live Demo](https://scs-cesarks81-4647s-projects.vercel.app/) · [Report a Bug](https://github.com/Cesarks81/SCS/issues) · [Request a Feature](https://github.com/Cesarks81/SCS/issues)
 
 </div>
 
