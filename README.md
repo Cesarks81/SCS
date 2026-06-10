@@ -1,8 +1,8 @@
 <div align="center">
 
-# SCS — Sistema de Control de Suministros
+# SCS — Supply Control System
 
-**Plataforma full-stack de gestión de inventario y almacenes**
+**Full-stack inventory and warehouse management platform**
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
@@ -11,133 +11,133 @@
 [![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat&logo=vercel&logoColor=white)](https://vercel.com/)
 
-[Demo en vivo](https://scs-foafjil5r-cesarks81-4647s-projects.vercel.app) · [Reportar un bug](https://github.com/Cesarks81/SCS/issues) · [Solicitar una función](https://github.com/Cesarks81/SCS/issues)
+[Live Demo](https://scs-foafjil5r-cesarks81-4647s-projects.vercel.app) · [Report a Bug](https://github.com/Cesarks81/SCS/issues) · [Request a Feature](https://github.com/Cesarks81/SCS/issues)
 
 </div>
 
 ---
 
-## Tabla de contenidos
+## Table of Contents
 
-- [Descripción](#descripción)
-- [Características](#características)
-- [Stack tecnológico](#stack-tecnológico)
-- [Arquitectura](#arquitectura)
-- [Requisitos previos](#requisitos-previos)
-- [Instalación y configuración](#instalación-y-configuración)
-- [Variables de entorno](#variables-de-entorno)
-- [Uso](#uso)
+- [Description](#description)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Installation & Setup](#installation--setup)
+- [Environment Variables](#environment-variables)
+- [Usage](#usage)
 - [API Reference](#api-reference)
-- [Estructura del proyecto](#estructura-del-proyecto)
-- [Despliegue](#despliegue)
+- [Project Structure](#project-structure)
+- [Deployment](#deployment)
 
 ---
 
-## Descripción
+## Description
 
-SCS es una aplicación web full-stack para la gestión integral de inventario y almacenes. Permite registrar productos, controlar niveles de stock, registrar movimientos de entrada y salida, administrar múltiples almacenes y generar reportes exportables en Excel y PDF — todo en tiempo real con una interfaz moderna y responsive.
-
----
-
-## Características
-
-### Inventario
-- Alta, edición y baja de productos con atributos personalizados
-- Dos tipos de producto: **individual** (con número de serie) y **contable** (a granel)
-- Asignación de imagen y emoji por producto
-- Estados de producto: `Óptimo`, `En reparación`, `Asignado`, `De baja`
-- Control de stock mínimo, máximo y de seguridad
-
-### Movimientos de stock
-- Registro de entradas y salidas con motivo
-- Validación en tiempo real (no permite retirar más del stock disponible)
-- Historial completo de movimientos por producto
-
-### Almacenes
-- Creación y gestión de múltiples almacenes con ubicación
-- Eliminación segura (bloquea si hay productos asignados)
-
-### Estadísticas y reportes
-- Dashboard con KPIs de inventario en tiempo real
-- Visualización de movimientos y niveles de stock
-- **Exportación a Excel (.xlsx)** con columnas formateadas
-- **Exportación a PDF** con tablas y cabeceras
-
-### Seguridad
-- Autenticación con JWT (tokens de acceso)
-- Contraseñas hasheadas con bcrypt
-- Rutas protegidas en frontend
-- Confirmación antes de cerrar sesión
+SCS is a full-stack web application for comprehensive inventory and warehouse management. It allows you to register products, track stock levels, log inbound and outbound movements, manage multiple warehouses, and generate exportable reports in Excel and PDF — all in real time with a modern, responsive interface.
 
 ---
 
-## Stack tecnológico
+## Features
 
-| Capa | Tecnología | Versión |
+### Inventory
+- Create, edit, and remove products with custom attributes
+- Two product types: **individual** (serialized) and **countable** (bulk)
+- Image and emoji assignment per product
+- Product statuses: `Optimal`, `Under repair`, `Assigned`, `Decommissioned`
+- Minimum, maximum, and safety stock control
+
+### Stock Movements
+- Log inbound and outbound movements with a reason
+- Real-time validation (prevents withdrawing more than available stock)
+- Full movement history per product
+
+### Warehouses
+- Create and manage multiple warehouses with location
+- Safe deletion (blocked if products are assigned)
+
+### Statistics & Reports
+- Dashboard with real-time inventory KPIs
+- Stock level and movement visualization
+- **Excel export (.xlsx)** with formatted columns
+- **PDF export** with tables and headers
+
+### Security
+- JWT authentication (access tokens)
+- bcrypt password hashing
+- Protected routes on the frontend
+- Logout confirmation prompt
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Version |
 |---|---|---|
 | Frontend framework | React | 19.x |
 | Build tool | Vite | 8.x |
-| Estilos | Tailwind CSS | 4.x |
-| Routing frontend | React Router DOM | 7.x |
-| Exportación PDF | jsPDF + jsPDF-autotable | 4.x / 5.x |
-| Exportación Excel | XLSX (SheetJS) | 0.18.x |
+| Styling | Tailwind CSS | 4.x |
+| Frontend routing | React Router DOM | 7.x |
+| PDF export | jsPDF + jsPDF-autotable | 4.x / 5.x |
+| Excel export | XLSX (SheetJS) | 0.18.x |
 | Backend framework | FastAPI | 0.115.x |
-| Servidor ASGI | Uvicorn | 0.30.x |
-| Base de datos | MongoDB (async) | — |
-| Driver MongoDB | Motor | 3.4.x |
-| Validación datos | Pydantic v2 | 2.7.x |
-| Autenticación | python-jose + passlib | — |
-| Despliegue | Vercel | — |
+| ASGI server | Uvicorn | 0.30.x |
+| Database | MongoDB (async) | — |
+| MongoDB driver | Motor | 3.4.x |
+| Data validation | Pydantic v2 | 2.7.x |
+| Authentication | python-jose + passlib | — |
+| Deployment | Vercel | — |
 
 ---
 
-## Arquitectura
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      Cliente (Browser)                  │
+│                      Client (Browser)                   │
 │              React 19 + Vite + Tailwind CSS             │
 └───────────────────────┬─────────────────────────────────┘
                         │ HTTPS / REST API
 ┌───────────────────────▼─────────────────────────────────┐
 │                 Backend (FastAPI + Uvicorn)              │
-│   Módulos: auth | products | warehouses | movements     │
-│   Patrón: Router → Service → Repository                 │
+│   Modules: auth | products | warehouses | movements     │
+│   Pattern: Router → Service → Repository                │
 └───────────────────────┬─────────────────────────────────┘
                         │ Motor (async)
 ┌───────────────────────▼─────────────────────────────────┐
 │                   MongoDB (Atlas / local)                │
-│    Colecciones: users | products | warehouses | movements│
+│    Collections: users | products | warehouses | movements│
 └─────────────────────────────────────────────────────────┘
 ```
 
-El backend sigue un patrón de **módulos por dominio** (Router → Service → Repository), lo que desacopla la lógica de negocio del acceso a datos. Todas las operaciones de base de datos son **asíncronas** gracias a Motor.
+The backend follows a **domain-based module pattern** (Router → Service → Repository), decoupling business logic from data access. All database operations are **asynchronous** via Motor.
 
 ---
 
-## Requisitos previos
+## Prerequisites
 
-- **Node.js** ≥ 18.x y **npm** ≥ 9.x
+- **Node.js** ≥ 18.x and **npm** ≥ 9.x
 - **Python** ≥ 3.10
-- **MongoDB** — instancia local o [MongoDB Atlas](https://www.mongodb.com/atlas) (cloud gratuito)
+- **MongoDB** — local instance or [MongoDB Atlas](https://www.mongodb.com/atlas) (free cloud tier)
 
 ---
 
-## Instalación y configuración
+## Installation & Setup
 
-### 1. Clonar el repositorio
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Cesarks81/SCS.git
 cd SCS
 ```
 
-### 2. Configurar el backend
+### 2. Set up the backend
 
 ```bash
 cd scs-backend
 
-# Crear y activar entorno virtual
+# Create and activate virtual environment
 python -m venv .venv
 
 # Windows
@@ -145,182 +145,182 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 
-# Crear archivo de variables de entorno (ver sección siguiente)
-cp .env.example .env   # o crea .env manualmente
+# Create environment variables file (see next section)
+cp .env.example .env   # or create .env manually
 
-# Iniciar servidor en modo desarrollo
+# Start development server
 uvicorn main:app --reload
 ```
 
-El backend queda disponible en `http://localhost:8000`.  
-La documentación interactiva (Swagger UI) en `http://localhost:8000/docs`.
+The backend will be available at `http://localhost:8000`.  
+Interactive API docs (Swagger UI) at `http://localhost:8000/docs`.
 
-### 3. Configurar el frontend
+### 3. Set up the frontend
 
 ```bash
 cd ../scs-frontend
 
-# Instalar dependencias
+# Install dependencies
 npm install
 
-# Iniciar servidor de desarrollo
+# Start development server
 npm run dev
 ```
 
-El frontend queda disponible en `http://localhost:5173`.
+The frontend will be available at `http://localhost:5173`.
 
 ---
 
-## Variables de entorno
+## Environment Variables
 
-Crea el archivo `scs-backend/.env` con las siguientes variables:
+Create the file `scs-backend/.env` with the following variables:
 
 ```env
-# Conexión a MongoDB
-MONGODB_URL=mongodb+srv://<usuario>:<contraseña>@cluster.mongodb.net/
+# MongoDB connection
+MONGODB_URL=mongodb+srv://<user>:<password>@cluster.mongodb.net/
 DB_NAME=scs_db
 
 # JWT
-SECRET_KEY=cambia_esto_por_una_clave_segura_y_larga
+SECRET_KEY=replace_this_with_a_long_secure_key
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 ```
 
-> **Nota de seguridad:** Nunca subas el archivo `.env` al repositorio. Está incluido en `.gitignore`.
+> **Security note:** Never commit the `.env` file to the repository. It is already included in `.gitignore`.
 
 ---
 
-## Uso
+## Usage
 
-### Registro e inicio de sesión
+### Registration & Login
 
-1. Accede a la aplicación y crea una cuenta con tu nombre, correo y contraseña.
-2. Inicia sesión — recibirás un token JWT que se almacena en el cliente.
+1. Open the app and create an account with your name, email, and password.
+2. Log in — you'll receive a JWT token stored on the client.
 
-### Gestión de almacenes
+### Warehouse Management
 
-Antes de crear productos, crea al menos un almacén desde el panel principal (icono de almacén en la barra lateral). Cada almacén tiene nombre y ubicación.
+Before creating products, set up at least one warehouse from the main panel (warehouse icon in the sidebar). Each warehouse has a name and location.
 
-### Gestión de productos
+### Product Management
 
-- Haz clic en **"+"** para añadir un producto.
-- Completa el formulario: modelo, categoría, tipo, almacén asignado, niveles de stock y atributos personalizados.
-- Puedes subir una imagen o asignar un emoji al producto.
+- Click **"+"** to add a product.
+- Fill in the form: model, category, type, assigned warehouse, stock levels, and custom attributes.
+- You can upload an image or assign an emoji to the product.
 
-### Movimientos de stock
+### Stock Movements
 
-- Abre el detalle de un producto y usa los botones **Entrada** / **Salida**.
-- Indica la cantidad y el motivo. El sistema validará que no haya stock insuficiente.
+- Open a product's detail view and use the **Inbound** / **Outbound** buttons.
+- Enter the quantity and reason. The system will validate that stock is sufficient.
 
-### Estadísticas y exportación
+### Statistics & Export
 
-- Navega a la pestaña **Estadísticas** para ver KPIs y gráficos.
-- Usa los botones **Exportar Excel** o **Exportar PDF** para descargar el reporte actual.
+- Go to the **Statistics** tab to view KPIs and charts.
+- Use the **Export Excel** or **Export PDF** buttons to download the current report.
 
 ---
 
 ## API Reference
 
-La API completa está documentada automáticamente por FastAPI en `/docs` (Swagger UI) y `/redoc`.
+The full API is automatically documented by FastAPI at `/docs` (Swagger UI) and `/redoc`.
 
-### Autenticación
+### Authentication
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/auth/register` | Registrar nuevo usuario |
-| `POST` | `/api/auth/login` | Iniciar sesión, retorna JWT |
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/login` | Log in, returns JWT |
 
-### Productos
+### Products
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/products` | Listar productos (filtros: `category`, `warehouse_id`) |
-| `GET` | `/api/products/{id}` | Obtener producto por ID |
-| `POST` | `/api/products` | Crear producto |
-| `PUT` | `/api/products/{id}` | Actualizar producto |
-| `DELETE` | `/api/products/{id}` | Eliminar producto |
+| `GET` | `/api/products` | List products (filters: `category`, `warehouse_id`) |
+| `GET` | `/api/products/{id}` | Get product by ID |
+| `POST` | `/api/products` | Create product |
+| `PUT` | `/api/products/{id}` | Update product |
+| `DELETE` | `/api/products/{id}` | Delete product |
 
-### Almacenes
+### Warehouses
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/warehouses` | Listar almacenes |
-| `GET` | `/api/warehouses/{id}` | Obtener almacén por ID |
-| `POST` | `/api/warehouses` | Crear almacén |
-| `DELETE` | `/api/warehouses/{id}` | Eliminar almacén (eliminación segura) |
+| `GET` | `/api/warehouses` | List warehouses |
+| `GET` | `/api/warehouses/{id}` | Get warehouse by ID |
+| `POST` | `/api/warehouses` | Create warehouse |
+| `DELETE` | `/api/warehouses/{id}` | Delete warehouse (safe deletion) |
 
-### Movimientos
+### Movements
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/api/movements` | Registrar movimiento (entrada/salida) |
-| `GET` | `/api/movements/{product_id}` | Historial de movimientos de un producto |
+| `POST` | `/api/movements` | Log a movement (inbound/outbound) |
+| `GET` | `/api/movements/{product_id}` | Movement history for a product |
 
-### Sistema
+### System
 
-| Método | Endpoint | Descripción |
+| Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/health` | Estado de la conexión a MongoDB |
-| `GET` | `/` | Información general de la API |
+| `GET` | `/api/health` | MongoDB connection status |
+| `GET` | `/` | General API info |
 
-> Los endpoints protegidos requieren el header `Authorization: Bearer <token>`.
+> Protected endpoints require the `Authorization: Bearer <token>` header.
 
 ---
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 SCS/
-├── scs-backend/                 # API en Python / FastAPI
+├── scs-backend/                 # Python / FastAPI API
 │   ├── core/
-│   │   ├── config.py            # Configuración y variables de entorno
-│   │   └── security.py          # JWT y hashing de contraseñas
+│   │   ├── config.py            # Configuration and environment variables
+│   │   └── security.py          # JWT and password hashing
 │   ├── db/
-│   │   └── mongodb.py           # Cliente MongoDB asíncrono
+│   │   └── mongodb.py           # Async MongoDB client
 │   ├── modules/
-│   │   ├── auth/                # Módulo de autenticación
-│   │   ├── products/            # Módulo de productos
-│   │   ├── warehouses/          # Módulo de almacenes
-│   │   └── movements/           # Módulo de movimientos
-│   ├── main.py                  # Entrada de la aplicación FastAPI
+│   │   ├── auth/                # Authentication module
+│   │   ├── products/            # Products module
+│   │   ├── warehouses/          # Warehouses module
+│   │   └── movements/           # Movements module
+│   ├── main.py                  # FastAPI application entry point
 │   └── requirements.txt
 │
-├── scs-frontend/                # SPA en React / Vite
+├── scs-frontend/                # React / Vite SPA
 │   └── src/
-│       ├── components/          # Componentes reutilizables (modales, imágenes)
-│       ├── pages/               # Páginas (Login, Estadísticas)
+│       ├── components/          # Reusable components (modals, images)
+│       ├── pages/               # Pages (Login, Statistics)
 │       ├── services/
-│       │   └── api.js           # Cliente HTTP centralizado
+│       │   └── api.js           # Centralized HTTP client
 │       ├── utils/
-│       │   └── exportReport.js  # Exportación a Excel y PDF
-│       └── App.jsx              # Vista principal de inventario
+│       │   └── exportReport.js  # Excel and PDF export
+│       └── App.jsx              # Main inventory view
 │
-└── vercel.json                  # Configuración de despliegue en Vercel
+└── vercel.json                  # Vercel deployment configuration
 ```
 
 ---
 
-## Despliegue
+## Deployment
 
-El proyecto está configurado para desplegarse en **Vercel** con un único `vercel.json` que gestiona tanto el frontend (build estático) como el backend (serverless Python).
+The project is configured to deploy on **Vercel** using a single `vercel.json` that handles both the frontend (static build) and the backend (serverless Python).
 
 ```bash
-# Instalar Vercel CLI
+# Install Vercel CLI
 npm i -g vercel
 
-# Desplegar desde la raíz del proyecto
+# Deploy from the project root
 vercel --prod
 ```
 
-Asegúrate de configurar las [variables de entorno](#variables-de-entorno) en el dashboard de Vercel antes del primer despliegue.
+Make sure to configure the [environment variables](#environment-variables) in the Vercel dashboard before the first deployment.
 
 ---
 
 <div align="center">
 
-Desarrollado por [César Ramos Morón](https://github.com/Cesarks81)
+Developed by [César Ramos Morón](https://github.com/Cesarks81)
 
 </div>
